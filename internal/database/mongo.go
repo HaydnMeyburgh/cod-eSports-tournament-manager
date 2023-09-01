@@ -15,7 +15,7 @@ func ConnectToMongoDB() error {
 	// Getting the MongoDB URI from the environment variable
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
-		log.Fatal("MONGODB_URI envrionment variable is not set")
+		log.Fatal("MONGODB_URI environment variable is not set")
 	}
 
 	clientOptions := options.Client().ApplyURI(uri)

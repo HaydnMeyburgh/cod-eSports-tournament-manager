@@ -3,10 +3,12 @@ package database
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var client *mongo.Client
@@ -36,9 +38,41 @@ func ConnectToMongoDB() error {
 
 	log.Println("Connected to MongoDB!")
 
+	// Initialise the database (Create it if it doesn't exist)
+	if err := InitialiseDatabase("esports-tournament-manager"); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func GetMongoClient() *mongo.Client {
 	return client
+}
+
+func InitialiseDatabase(dbName string) error {
+	// List existing databases
+	databases, err := client.ListDatabaseNames(context.TODO(), bson.M{})
+	if err != nil {
+		return err
+	}
+
+	// Check if database already exists
+	exists := false
+	for _, db := range databases {
+		if db == dbName {
+			exists = true
+			break
+		}
+	}
+
+	// If the database does not exist, create it
+	if !exists {
+		err := client.Database(dbName).CreateCollection(context.TODO(), "users")
+		if err != nil {
+			return err
+		} 
+	}
+	
+	return nil
 }

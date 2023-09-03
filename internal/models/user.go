@@ -2,9 +2,13 @@ package models
 
 import (
 	"errors"
+	"log"
+	"net/http"
+	"os"
 	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/auth"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/validation"
 	"go.mongodb.org/mongo-driver/bson"
@@ -77,4 +81,44 @@ func GetUserByID(id primitive.ObjectID) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// Logs in a user and returns a JWT token on successful login
+func loginUser( c *gin.Context) {
+	var loginUser struct {
+		Email string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&loginUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if user exists by email
+	user, err := GetUserByEmail(loginUser.Email)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+	}
+
+	// Compare provided password with the hashed password for the database
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginUser.Password))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Credentials"})
+		return
+	}
+
+	// Generate a JWT token for the user
+	jwtSecret := os.Getenv("SECRET_KEY")
+	if jwtSecret == "" {
+		log.Fatal("MONGODB_URI environment variable is not set")
+	}
+	token, err := auth.GenerateJWT(user.ID.Hex(), jwtSecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{"token": token})
+
 }

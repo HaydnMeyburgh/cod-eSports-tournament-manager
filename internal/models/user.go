@@ -28,6 +28,39 @@ var (
 	minPasswordLength = 8
 )
 
+// Queries DB to get a user by ID
+func GetUserByID(id primitive.ObjectID) (*User, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-managemer").Collection("users")
+	var user User
+	err := collection.FindOne(nil, bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// Retrieves a user by their email fromthe db
+func GetUserByEmail(email string) (*User, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
+	var user User
+	err := collection.FindOne(nil, bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// Updates a user document in the db
+func UpdateUserInDB(user *User) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
+	_, err := collection.ReplaceOne(nil, bson.M{"_id": user.ID}, user)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Register a new user and store them in the database.
 func RegisterUser(c *gin.Context) error {
 	var newUser User
@@ -73,16 +106,6 @@ func RegisterUser(c *gin.Context) error {
 	return nil
 }
 
-func GetUserByID(id primitive.ObjectID) (*User, error) {
-	collection := database.GetMongoClient().Database("esports-tournament-managemer").Collection("users")
-	var user User
-	err := collection.FindOne(nil, bson.M{"_id": id}).Decode(&user)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
 // Logs in a user and returns a JWT token on successful login
 func loginUser( c *gin.Context) {
 	var loginUser struct {
@@ -111,9 +134,9 @@ func loginUser( c *gin.Context) {
 	// Generate a JWT token for the user
 	jwtSecret := os.Getenv("SECRET_KEY")
 	if jwtSecret == "" {
-		log.Fatal("MONGODB_URI environment variable is not set")
+		log.Fatal("SECRET_KEY environment variable is not set")
 	}
-	token, err := auth.GenerateJWT(user.ID.Hex(), jwtSecret)
+	token, err := auth.GenerateJWT(user.ID, jwtSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
@@ -126,4 +149,58 @@ func loginUser( c *gin.Context) {
 // LogoutUser logs out a user by invalidating their token
 func LogoutUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+// Updates the username and/or password of a user
+func UpdateUser(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+
+	// Convert userID string to primitive.ObjectID
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	var updateUser struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&updateUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if user exists by ID
+	user, err := GetUserByID(objectID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Update username if provided
+	if updateUser.Username != "" {
+		user.Username = updateUser.Username
+	}
+
+	// Update password if provided
+	if updateUser.Password != "" {
+		// Hash new password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updateUser.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash new password"})
+			return
+		}
+		user.Password = string(hashedPassword)
+	}
+
+	// Update the user in the database
+	err = UpdateUserInDB(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 }

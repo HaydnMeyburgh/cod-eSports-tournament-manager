@@ -118,7 +118,7 @@ func loginUser( c *gin.Context) {
 		return
 	}
 
-	// Check if user exists by email (Need to create Get User By Email function)
+	// Check if user exists by email 
 	user, err := GetUserByEmail(loginUser.Email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -142,12 +142,33 @@ func loginUser( c *gin.Context) {
 		return
 	}
 
+	// Set the token ass an HTTP cookie
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name: "jwtToken",
+		Value: token,
+		Path: "/",
+		HttpOnly: true,
+		Secure: true,
+		SameSite: http.SameSiteNoneMode,
+	})
+
 	c.JSON(http.StatusOK, gin.H{"token": token})
 
 }
 
-// LogoutUser logs out a user by invalidating their token
+// Logs out a user and and clears the JWT token cookie
 func LogoutUser(c *gin.Context) {
+	// Clear the JWT token cookie
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name: "jwtToken",
+		Value: "",
+		Path: "/",
+		HttpOnly: true,
+		Secure: true,
+		MaxAge: -1,
+		SameSite: http.SameSiteNoneMode,
+	})
+	
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 

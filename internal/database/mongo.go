@@ -21,15 +21,15 @@ func ConnectToMongoDB() error {
 	}
 
 	clientOptions := options.Client().ApplyURI(uri)
-	
+
 	// Creating the MongoDB client
-	c, err := mongo.Connect(context.TODO(), clientOptions)
+	c, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		return err
 	}
-	
+
 	// Pinging the server to verify the connection
-	if err = c.Ping(context.TODO(), nil); err != nil {
+	if err = c.Ping(context.Background(), nil); err != nil {
 		return err
 	}
 
@@ -71,8 +71,8 @@ func InitialiseDatabase(dbName string) error {
 		err := client.Database(dbName).CreateCollection(context.TODO(), "users")
 		if err != nil {
 			return err
-		} 
+		}
 	}
-	
+
 	return nil
 }

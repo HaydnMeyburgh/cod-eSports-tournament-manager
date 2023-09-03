@@ -95,7 +95,7 @@ func loginUser( c *gin.Context) {
 		return
 	}
 
-	// Check if user exists by email
+	// Check if user exists by email (Need to create Get User By Email function)
 	user, err := GetUserByEmail(loginUser.Email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -118,7 +118,12 @@ func loginUser( c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"token": token})
 
+}
+
+// LogoutUser logs out a user by invalidating their token
+func LogoutUser(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }

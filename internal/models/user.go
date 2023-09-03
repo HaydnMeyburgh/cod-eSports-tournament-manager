@@ -122,6 +122,7 @@ func loginUser( c *gin.Context) {
 	user, err := GetUserByEmail(loginUser.Email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
 	}
 
 	// Compare provided password with the hashed password for the database
@@ -168,7 +169,7 @@ func LogoutUser(c *gin.Context) {
 		MaxAge: -1,
 		SameSite: http.SameSiteNoneMode,
 	})
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 

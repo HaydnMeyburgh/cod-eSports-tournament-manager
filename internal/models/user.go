@@ -107,7 +107,7 @@ func RegisterUser(c *gin.Context) error {
 }
 
 // Logs in a user and returns a JWT token on successful login
-func loginUser( c *gin.Context) {
+func LoginUser( c *gin.Context) {
 	var loginUser struct {
 		Email string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`

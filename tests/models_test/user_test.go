@@ -118,3 +118,26 @@ func TestUpdateUser(t *testing.T) {
 	// password should be different after update
 	assert.NotEqual(t, user.Password, retrievedUser.Password)
 }
+
+func TestRegistration(t *testing.T) {
+	newUser := &models.User{
+		Username: "newuser",
+		Email:    "newuser@example.com",
+		Password: "newpassword",
+	}
+
+	err := models.RegisterUser(nil, newUser)
+	if err != nil {
+		t.Fatalf("Error registering new user: %v", err)
+	}
+
+	retrievedUser, err := models.GetUserByEmail("newuser@example.com")
+	if err != nil {
+		t.Fatalf("Error fetching registered user: %v", err)
+	}
+
+	assert.Equal(t, newUser.Username, retrievedUser.Username)
+	assert.Equal(t, newUser.Email, retrievedUser.Email)
+	// Password should come back hasehd
+	assert.NotEqual(t, newUser.Password, retrievedUser.Password)
+}

@@ -9,6 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
+	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/handlers"
+	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/routes"
 	"github.com/joho/godotenv"
 )
 
@@ -46,6 +48,12 @@ func main() {
 			"error": "Route not found",
 		})
 	})
+
+	// Initialise handlers
+	userHandler := handlers.NewUserHandler()
+
+	// Setup routes
+	routes.SetupUserRoutes(router, userHandler)
 
 	// Start server, or log error if problem with server starting
 	if err := router.Run(":" + port); err != nil {

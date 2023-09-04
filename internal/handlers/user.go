@@ -30,7 +30,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 func (h *UserHandler) LoginUser(c *gin.Context) {
 	var loginUser struct {
 		Email    string `json:"email" binding:"required"`
-		Password string `json:"Password" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&loginUser); err != nil {
@@ -38,7 +38,8 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	token, err := models.LoginUser(c)
+
+	token, err := models.LoginUser(c, &loginUser)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return

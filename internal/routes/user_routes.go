@@ -12,6 +12,6 @@ func SetupUserRoutes(r *gin.Engine, userHandler *handlers.UserHandler) {
 		userRoutes.POST("/register", userHandler.RegisterUser)
 		userRoutes.POST("/login", userHandler.LoginUser)
 		userRoutes.POST("/logout", userHandler.LogoutUser)
-		userRoutes.POST("/update", userHandler.UpdateUser)
+		userRoutes.PUT("/update", userHandler.UpdateUser)
 	}
 }

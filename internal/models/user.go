@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -106,66 +105,61 @@ func RegisterUser(c *gin.Context, newUser *User) error {
 }
 
 // Logs in a user and returns a JWT token on successful login
-func LoginUser( c *gin.Context) {
+func LoginUser(c *gin.Context) (string, error) {
 	var loginUser struct {
-		Email string `json:"email" binding:"required"`
+		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&loginUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return "", err
 	}
 
-	// Check if user exists by email 
+	// Check if user exists by email
 	user, err := GetUserByEmail(loginUser.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
+		return "", err
 	}
 
 	// Compare provided password with the hashed password for the database
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginUser.Password))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Credentials"})
-		return
+		return "", err
 	}
 
 	// Generate a JWT token for the user
 	jwtSecret := os.Getenv("SECRET_KEY")
 	if jwtSecret == "" {
-		log.Fatal("SECRET_KEY environment variable is not set")
+		return "", errors.New("SECRET_KEY environment variable is not set")
 	}
 	token, err := auth.GenerateJWT(user.ID, jwtSecret)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
+		return "", err
 	}
 
 	// Set the token ass an HTTP cookie
 	http.SetCookie(c.Writer, &http.Cookie{
-		Name: "jwtToken",
-		Value: token,
-		Path: "/",
+		Name:     "jwtToken",
+		Value:    token,
+		Path:     "/",
 		HttpOnly: true,
-		Secure: true,
+		Secure:   true,
 		SameSite: http.SameSiteNoneMode,
 	})
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
-
+	return token, nil
 }
 
 // Logs out a user and and clears the JWT token cookie
 func LogoutUser(c *gin.Context) {
 	// Clear the JWT token cookie
 	http.SetCookie(c.Writer, &http.Cookie{
-		Name: "jwtToken",
-		Value: "",
-		Path: "/",
+		Name:     "jwtToken",
+		Value:    "",
+		Path:     "/",
 		HttpOnly: true,
-		Secure: true,
-		MaxAge: -1,
+		Secure:   true,
+		MaxAge:   -1,
 		SameSite: http.SameSiteNoneMode,
 	})
 

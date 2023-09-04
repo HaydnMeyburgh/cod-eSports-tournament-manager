@@ -62,8 +62,7 @@ func UpdateUserInDB(user *User) error {
 }
 
 // Register a new user and store them in the database.
-func RegisterUser(c *gin.Context) error {
-	var newUser User
+func RegisterUser(c *gin.Context, newUser *User) error {
 	if err := c.ShouldBindJSON(&newUser); err != nil {
 		return err
 	}

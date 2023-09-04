@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/auth"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/models"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +38,7 @@ func TestMain(m *testing.M) {
 func TestGetUserByID(t *testing.T) {
 	user := models.User{
 		Username: "testuser",
-		Email: "test@example.com",
+		Email:    "test@example.com",
 		Password: "testpassword",
 	}
 	collection := database.GetMongoClient().Database("test_database").Collection("users")
@@ -62,7 +61,7 @@ func TestGetUserByID(t *testing.T) {
 func TestGetUserByEmail(t *testing.T) {
 	user := models.User{
 		Username: "testuser",
-		Email: "test@example.com",
+		Email:    "test@example.com",
 		Password: "testpassword",
 	}
 
@@ -85,7 +84,7 @@ func TestGetUserByEmail(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 	user := models.User{
 		Username: "testuser",
-		Email: "test@example.com",
+		Email:    "test@example.com",
 		Password: "testpassword",
 	}
 
@@ -156,11 +155,11 @@ func TestLoginUser(t *testing.T) {
 	}
 
 	loginUser := struct {
-		Email string `json:"email" binding:"required"`
+		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}{
 		Email:    "test@example.com",
-    Password: "testpassword",
+		Password: "testpassword",
 	}
 
 	token, err := models.LoginUser(nil, &loginUser)

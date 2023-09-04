@@ -141,3 +141,32 @@ func TestRegistration(t *testing.T) {
 	// Password should come back hasehd
 	assert.NotEqual(t, newUser.Password, retrievedUser.Password)
 }
+
+func TestLoginUser(t *testing.T) {
+	user := models.User{
+		Username: "testuser",
+		Email:    "test@example.com",
+		Password: "testpassword",
+	}
+
+	collection := database.GetMongoClient().Database("test_database").Collection("users")
+	_, err := collection.InsertOne(nil, user)
+	if err != nil {
+		t.Fatalf("Error inserting user: %v", err)
+	}
+
+	loginUser := struct {
+		Email string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}{
+		Email:    "test@example.com",
+    Password: "testpassword",
+	}
+
+	token, err := models.LoginUser(nil, &loginUser)
+	if err != nil {
+		t.Fatalf("Error logging in user: %v", err)
+	}
+
+	assert.NotEmpty(t, token)
+}

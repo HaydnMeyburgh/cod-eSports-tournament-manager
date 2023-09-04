@@ -27,29 +27,55 @@ func GenerateJWT(userID primitive.ObjectID, jwtSecret string) (string, error) {
 // Middleware for protecting routes with JWT authentication
 func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorisation")
+		authHeader := c.GetHeader("Authorization")
+
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorisation header is missing"})
-			c.Abort()
-			return
+			cookies := c.Request.Cookies()
+			var tokenString string
+			for _, cookie := range cookies {
+				if cookie.Name == "jwtToken" {
+					tokenString = cookie.Value
+					break
+				}
+			}
+
+			if tokenString == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorisation header is missing"})
+				c.Abort()
+				return
+			}
+
+			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+				return []byte(jwtSecret), nil
+			})
+
+			if err != nil || !token.Valid {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+				c.Abort()
+				return
+			}
+
+			// Extract user information from the token and set it in the context
+			claims, _ := token.Claims.(jwt.MapClaims)
+			userID := claims["user_id"].(string)
+			c.Set("user_id", userID)
+
+		} else {
+			tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
+			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+				return []byte(jwtSecret), nil
+			})
+
+			if err != nil || !token.Valid {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+				c.Abort()
+				return
+			}
+
+			claims, _ := token.Claims.(jwt.MapClaims)
+			userID := claims["user_id"].(string)
+			c.Set("user_id", userID)
 		}
-
-		tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte(jwtSecret), nil
-		})
-
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			c.Abort()
-			return
-		}
-
-		// Extract user information from the token and set it in the context
-		claims, _ := token.Claims.(jwt.MapClaims)
-		userID := claims["user_id"].(string)
-		c.Set("user_id", userID)
-
 		c.Next()
 	}
 }

@@ -81,3 +81,40 @@ func TestGetUserByEmail(t *testing.T) {
 	assert.Equal(t, user.Email, retrievedUser.Email)
 	assert.Equal(t, user.Password, retrievedUser.Password)
 }
+
+func TestUpdateUser(t *testing.T) {
+	user := models.User{
+		Username: "testuser",
+		Email: "test@example.com",
+		Password: "testpassword",
+	}
+
+	collection := database.GetMongoClient().Database("test_database").Collection("users")
+	res, err := collection.InsertOne(nil, user)
+	if err != nil {
+		t.Fatalf("Error inserting user: %v", err)
+	}
+	userID := res.InsertedID.(primitive.ObjectID)
+
+	updateUser := struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{
+		Username: "",
+		Password: "updatedpassword",
+	}
+
+	err = models.UpdateUser(nil, userID.Hex(), &updateUser)
+	if err != nil {
+		t.Fatalf("Error updating user: %v", err)
+	}
+
+	retrievedUser, err := models.GetUserByID(userID)
+	if err != nil {
+		t.Fatalf("Error fetching updated user: %v", err)
+	}
+
+	assert.Equal(t, updateUser.Username, retrievedUser.Username)
+	// password should be different after update
+	assert.NotEqual(t, user.Password, retrievedUser.Password)
+}

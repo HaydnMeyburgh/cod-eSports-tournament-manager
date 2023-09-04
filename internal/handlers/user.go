@@ -38,7 +38,6 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 		return
 	}
 
-
 	token, err := models.LoginUser(c, &loginUser)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -65,8 +64,18 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	userID := c.MustGet("user_id").(string)
-	err := models.UpdateUser(c, userID)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID format"})
+	}
+	
+	err := models.UpdateUser(c, userIDStr, &updateUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
 		return

@@ -58,3 +58,26 @@ func TestGetUserByID(t *testing.T) {
 	assert.Equal(t, user.Email, retrievedUser.Email)
 	assert.Equal(t, user.Password, retrievedUser.Password)
 }
+
+func TestGetUserByEmail(t *testing.T) {
+	user := models.User{
+		Username: "testuser",
+		Email: "test@example.com",
+		Password: "testpassword",
+	}
+
+	collection := database.GetMongoClient().Database("test_database").Collection("users")
+	_, err := collection.InsertOne(nil, user)
+	if err != nil {
+		t.Fatalf("Error inserting user: %v", err)
+	}
+
+	retrievedUser, err := models.GetUserByEmail("test@example.com")
+	if err != nil {
+		t.Fatalf("Error fetching user by email: %v", err)
+	}
+
+	assert.Equal(t, user.Username, retrievedUser.Username)
+	assert.Equal(t, user.Email, retrievedUser.Email)
+	assert.Equal(t, user.Password, retrievedUser.Password)
+}

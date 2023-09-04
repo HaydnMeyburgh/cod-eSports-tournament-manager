@@ -167,14 +167,11 @@ func LogoutUser(c *gin.Context) {
 }
 
 // Updates the username and/or password of a user
-func UpdateUser(c *gin.Context) {
-	userID := c.MustGet("user_id").(string)
-
+func UpdateUser(c *gin.Context, userID string) error {
 	// Convert userID string to primitive.ObjectID
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
-		return
+		return err
 	}
 
 	var updateUser struct {
@@ -183,15 +180,13 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&updateUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return err
 	}
 
 	// Check if user exists by ID
 	user, err := GetUserByID(objectID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
+		return err
 	}
 
 	// Update username if provided
@@ -204,8 +199,7 @@ func UpdateUser(c *gin.Context) {
 		// Hash new password
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updateUser.Password), bcrypt.DefaultCost)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash new password"})
-			return
+			return err
 		}
 		user.Password = string(hashedPassword)
 	}
@@ -213,9 +207,8 @@ func UpdateUser(c *gin.Context) {
 	// Update the user in the database
 	err = UpdateUserInDB(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
-		return
+		return err
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+	return nil
 }

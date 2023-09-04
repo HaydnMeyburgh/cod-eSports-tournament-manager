@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -30,7 +31,7 @@ var (
 
 // Queries DB to get a user by ID
 func GetUserByID(id primitive.ObjectID) (*User, error) {
-	collection := database.GetMongoClient().Database("esports-tournament-managemer").Collection("users")
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
 	var user User
 	err := collection.FindOne(nil, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
@@ -166,20 +167,21 @@ func LogoutUser(c *gin.Context) {
 }
 
 // Updates the username and/or password of a user
-func UpdateUser(c *gin.Context, userID string) error {
+func UpdateUser(c *gin.Context, userID string, updateUser *struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}) error {
+
+	log.Println("Received updated user:", updateUser)
 	// Convert userID string to primitive.ObjectID
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return err
 	}
 
-	var updateUser struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-
 	// Check if user exists by ID
 	user, err := GetUserByID(objectID)
+	log.Println("Received user from the db:", user)
 	if err != nil {
 		return err
 	}
@@ -201,7 +203,9 @@ func UpdateUser(c *gin.Context, userID string) error {
 
 	// Update the user in the database
 	err = UpdateUserInDB(user)
+
 	if err != nil {
+		log.Println("could not update the user:", err)
 		return err
 	}
 

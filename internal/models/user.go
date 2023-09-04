@@ -109,15 +109,10 @@ func RegisterUser(c *gin.Context, newUser *User) error {
 }
 
 // Logs in a user and returns a JWT token on successful login
-func LoginUser(c *gin.Context) (string, error) {
-	var loginUser struct {
-		Email    string `json:"email" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&loginUser); err != nil {
-		return "", err
-	}
+func LoginUser(c *gin.Context, loginUser *struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}) (string, error) {
 
 	// Check if user exists by email
 	user, err := GetUserByEmail(loginUser.Email)
@@ -181,10 +176,6 @@ func UpdateUser(c *gin.Context, userID string) error {
 	var updateUser struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
-	}
-
-	if err := c.ShouldBindJSON(&updateUser); err != nil {
-		return err
 	}
 
 	// Check if user exists by ID

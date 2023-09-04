@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -62,9 +63,7 @@ func UpdateUserInDB(user *User) error {
 
 // Register a new user and store them in the database.
 func RegisterUser(c *gin.Context, newUser *User) error {
-	if err := c.ShouldBindJSON(&newUser); err != nil {
-		return err
-	}
+	fmt.Println("Received registration request:", newUser)
 
 	// Validate email
 	if !emailRegex.MatchString(newUser.Email) {
@@ -74,20 +73,24 @@ func RegisterUser(c *gin.Context, newUser *User) error {
 	// Check if the email already exists in the db
 	emailExists, err := validation.EmailExistsInDB(newUser.Email)
 	if err != nil {
+		fmt.Println("Error checking email existence in the database:", err)
 		return err
 	}
 	if emailExists {
+		fmt.Println("Email already exists")
 		return errors.New("Email already exists")
 	}
 
 	// Validate password length - 9 characters
 	if len(newUser.Password) < minPasswordLength {
+		fmt.Println("Password must be at least 8 characters")
 		return errors.New("Password must be at least 8 characters")
 	}
 
 	// Use Bcrypt to hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	if err != nil {
+		fmt.Println("Error hashing password:", err)
 		return err
 	}
 	newUser.Password = string(hashedPassword)
@@ -98,6 +101,7 @@ func RegisterUser(c *gin.Context, newUser *User) error {
 	// Insert new users document into collection
 	_, err = collection.InsertOne(c, newUser)
 	if err != nil {
+		fmt.Println("Error inserting user into the database:", err)
 		return err
 	}
 

@@ -1,56 +1,16 @@
 package models_test
 
 import (
-	"context"
 	"fmt"
-	"log"
-	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/models"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
-
-func cleanupTestData() error {
-	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
-
-	filter := bson.M{}
-
-	_, err := collection.DeleteMany(context.TODO(), filter)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func TestMain(m *testing.M) {
-	// Load environment variables from the .env file
-	if err := godotenv.Load("../../.env"); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
-	err := database.ConnectToMongoDB()
-	if err != nil {
-		log.Fatalf("Error initialising MongoDB: %v", err)
-	}
-
-	exitCode := m.Run()
-
-	if err = cleanupTestData(); err != nil {
-		log.Fatalf("Error cleaning up test data: %v", err)
-	}
-
-	database.GetMongoClient().Disconnect(context.TODO())
-
-	os.Exit(exitCode)
-}
 
 func TestGetUserByID(t *testing.T) {
 	user := models.User{

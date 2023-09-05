@@ -117,11 +117,14 @@ func LoginUser(c *gin.Context, loginUser *struct {
 
 	// Check if user exists by email
 	user, err := GetUserByEmail(loginUser.Email)
+	fmt.Println("User from database:", user)
 	if err != nil {
 		return "", err
 	}
 
 	// Compare provided password with the hashed password for the database
+	fmt.Println("user password:", user.Password)
+	fmt.Println("login password:", loginUser.Password)
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginUser.Password))
 	if err != nil {
 		return "", err

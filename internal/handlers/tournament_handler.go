@@ -103,3 +103,45 @@ func (h *TournamentHandler) UpdateTournament(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Tournament updated successfully"})
 }
+
+// Handles the deletion of a tournament by its ID
+func (h *TournamentHandler) DeleteTournament(c *gin.Context) {
+	tournamentID := c.Param("id")
+
+	id, err := primitive.ObjectIDFromHex(tournamentID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Tournament ID format"})
+		return
+	}
+
+	// Ensure that the user making the request is the tournament organizer
+	userIDStr, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	tournament, err := models.GetTournamentByID(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	if userID != tournament.OrganizerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this tournament"})
+		return
+	}
+
+	err = models.DeleteTournament(c, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Tournament deleted successfully"})
+}

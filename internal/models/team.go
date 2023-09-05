@@ -13,6 +13,7 @@ import (
 type Team struct {
 	ID      primitive.ObjectID `bson:"_id,omitempty"`
 	Name    string             `bson:"name" binding:"required"`
+	OrganizerID primitive.ObjectID   `bson:"organizer_id" binding:"required"`
 	Players []string           `bson:"players"`
 	TournamentID primitive.ObjectID `bson:"tournament_id,omitempty"`
 }

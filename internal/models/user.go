@@ -55,11 +55,13 @@ func GetUserByEmail(email string) (*User, error) {
 // Updates a user document in the db
 func UpdateUserInDB(user *User) error {
 	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
-	_, err := collection.ReplaceOne(nil, bson.M{"_id": user.ID}, user)
-	if err != nil {
+	update := bson.M{"$set": user}
+	 _, err := collection.UpdateOne(nil, bson.M{"_id": user.ID}, update)
+	 if err != nil {
 		return err
-	}
-	return nil
+	 }
+
+	 return nil
 }
 
 // Register a new user and store them in the database.

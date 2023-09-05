@@ -57,3 +57,15 @@ func UpdateTeam(c *gin.Context, id primitive.ObjectID, updatedTeam *Team) error 
 
 	return nil
 }
+
+// Delets a team by it's ID
+func DeleteTeam(c *gin.Context, id primitive.ObjectID) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("team")
+
+	_, err := collection.DeleteOne(c, bson.M{"_id": id})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

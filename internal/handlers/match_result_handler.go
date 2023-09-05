@@ -42,7 +42,7 @@ func (h *MatchResultHandler) CreateMatchResult(c *gin.Context) {
 }
 
 // GetMatchResultHandler handles the retrieval of a match result by its ID.
-func (h *MatchResultHandler) GetMatchResultHandler(c *gin.Context) {
+func (h *MatchResultHandler) GetMatchResultById(c *gin.Context) {
 	matchResultID := c.Param("id")
 
 	id, err := primitive.ObjectIDFromHex(matchResultID)
@@ -58,4 +58,47 @@ func (h *MatchResultHandler) GetMatchResultHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, matchResult)
+}
+
+// UpdateMatchResultHandler handles the updating of an existing match result.
+func (h *MatchResultHandler) UpdateMatchResult(c *gin.Context) {
+	matchResultID := c.Param("id")
+
+	id, err := primitive.ObjectIDFromHex(matchResultID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Match Result ID format"})
+		return
+	}
+
+	var updatedMatchResult models.MatchResult
+
+	if err := c.ShouldBindJSON(&updatedMatchResult); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userIDStr, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	if userID != updatedMatchResult.OrganizerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this team"})
+		return
+	}
+
+	err = models.UpdateMatchResult(c, id, &updatedMatchResult)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Match Result updated successfully"})
 }

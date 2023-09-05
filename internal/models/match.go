@@ -13,11 +13,13 @@ import (
 type Match struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	TournamentID primitive.ObjectID `bson:"tournament_id,omitempty"`
+	OrganizerID primitive.ObjectID   `bson:"organizer_id" binding:"required"`
 	Team1ID   primitive.ObjectID `bson:"team1_id" binding:"required"`
 	Team2ID   primitive.ObjectID `bson:"team2_id" binding:"required"`
 	Score1    int                `bson:"score1"`
 	Score2    int                `bson:"score2"`
 }
+
 // add a team to a tournament
 func AddMatchToTournament(c *gin.Context, matchID, tournamentID primitive.ObjectID) error {
 	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournament")

@@ -71,3 +71,22 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Team successfully updated"})
 }
+
+// Handler to delete team
+func (h *TeamHandler) DeleteTeam(c *gin.Context) {
+	teamID := c.Param("id")
+
+	objectID, err := primitive.ObjectIDFromHex(teamID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID format"})
+		return
+	}
+
+	if err := models.DeleteTeam(c, objectID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return 
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Team deleted successfully"})
+}
+

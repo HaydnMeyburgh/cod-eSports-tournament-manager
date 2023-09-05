@@ -20,12 +20,25 @@ type Tournament struct {
 	Teams       []primitive.ObjectID `bson:"teams"`
 	Matches     []primitive.ObjectID `bson:"matches"`
 }
+
 // Adds teams to tournaments
 func AddTeamsToTournament(c *gin.Context, tournamentID primitive.ObjectID, teamIDs []primitive.ObjectID) error {
-	// Add teams to the tournament
 	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
 
 	update := bson.M{"$push": bson.M{"teams": bson.M{"$each": teamIDs}}}
+	_, err := collection.UpdateOne(c, bson.M{"_id": tournamentID}, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Add matches to a tournament
+func AddMatchesToTournament(c *gin.Context, tournamentID primitive.ObjectID, matchIDs []primitive.ObjectID) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
+
+	update := bson.M{"$push": bson.M{"matches": bson.M{"$each": matchIDs}}}
 	_, err := collection.UpdateOne(c, bson.M{"_id": tournamentID}, update)
 	if err != nil {
 		return err
@@ -44,6 +57,21 @@ func CreateTournament(c *gin.Context, tournament *Tournament) (*Tournament, erro
 	}
 
 	tournament.ID = result.InsertedID.(primitive.ObjectID)
+
+	if len(tournament.Teams) > 0 {
+		err = AddTeamsToTournament(c, tournament.ID, tournament.Teams)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(tournament.Matches) > 0 {
+		err = AddMatchesToTournament(c, tournament.ID, tournament.Matches)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return tournament, nil
 }
 

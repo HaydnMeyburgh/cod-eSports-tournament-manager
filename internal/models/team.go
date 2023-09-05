@@ -1,23 +1,22 @@
 package models
 
 import (
-	"context"
 	"errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-drivers/bson"
 	"go.mongodb.org/mongo-drivers/bson/primitive"
 )
 
 type Team struct {
-	ID primitive.ObjectID `bson:"_id,omitempty"`
-	Name string `bson:"name" binding:"required"`
-	Players []string `bson:"players"`
+	ID      primitive.ObjectID `bson:"_id,omitempty"`
+	Name    string             `bson:"name" binding:"required"`
+	Players []string           `bson:"players"`
 }
 
+// Creates a new Team
 func CreateTeam(c *gin.Context, team *Team) (*Team, error) {
 	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("teams")
 
@@ -28,4 +27,20 @@ func CreateTeam(c *gin.Context, team *Team) (*Team, error) {
 
 	team.ID = result.InsertedID.(primitive.ObjectID)
 	return team, nil
+}
+
+// Retrieves a team by id
+func GetTeamByID(c *gin.Context, id primitive.ObjectID) (*Team, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("team")
+
+	var team Team
+	err := collection.FindOne(c, bson.M{"_id": id}).Decode(&team)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("Team not found")
+		}
+		return nil, err
+	}
+
+	return &team, nil
 }

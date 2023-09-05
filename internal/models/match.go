@@ -23,7 +23,7 @@ type Match struct {
 func CreateMatch(c *gin.Context, match *Match) (*Match, error) {
 	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("matches")
 
-	result, err := collection.InsertOne(ctx, match)
+	result, err := collection.InsertOne(c, match)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +33,45 @@ func CreateMatch(c *gin.Context, match *Match) (*Match, error) {
 }
 
 // - GetMatchByID
+func GetMatchByID(c *gin.Context, id primitive.ObjectID) (*Match, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("matches")
+
+	var match Match
+	err := collection.FindOne(c, bson.M{"_id": id}).Decode(&match)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("Match not found")
+		}
+		return nil, err
+	}
+
+	return &match, nil
+}
+
 // - UpdateMatch
+func UpdateMatch(c *gin.Context, id primitive.ObjectID, updatedMatch *Match) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("matches")
+
+	update := bson.M{"$set": updatedMatch}
+	_, err := collection.UpdateOne(c, bson.M{"_id": id}, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // - DeleteMatch
+func DeleteMatch(c *gin.Context, id primitive.ObjectID) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("matches")
+
+	_, err := collection.DeleteOne(c, bson.M{"_id": id})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // - CreateMatchHandler
 // - GetMatchHandler

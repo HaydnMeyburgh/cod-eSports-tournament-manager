@@ -12,6 +12,12 @@ type TeamHandler struct{}
 
 // Handler for create team
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
+	userIDStr, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
 	var newTeam models.Team
 
 	if err := c.ShouldBindJSON(&newTeam); err != nil {
@@ -19,6 +25,13 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 		return
 	}
 
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	newTeam.OrganizerID = userID
 	tournamentID := newTeam.TournamentID
 
 	createdTeam, err := models.CreateTeam(c, &newTeam)
@@ -66,8 +79,25 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 
 	var updatedTeam models.Team
 
-	if err :=c.ShouldBindJSON(&updatedTeam); err != nil {
+	if err := c.ShouldBindJSON(&updatedTeam); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userIDStr, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	if userID != updatedTeam.OrganizerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this team"})
 		return
 	}
 
@@ -89,9 +119,31 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 		return
 	}
 
+	userIDStr, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	team, err := models.GetTeamByID(c, objectID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	if userID != team.OrganizerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this tournament"})
+		return
+	}
+
 	if err := models.DeleteTeam(c, objectID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return 
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Team deleted successfully"})

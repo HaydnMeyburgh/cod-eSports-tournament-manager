@@ -82,7 +82,7 @@ func (h *MatchHandler) UpdateMatch(c *gin.Context) {
 }
 
 // Handles the deletion of a match by its ID.
-func (h *MatchHandler) DeleteMatchHandler(c *gin.Context) {
+func (h *MatchHandler) DeleteMatch(c *gin.Context) {
 	matchID := c.Param("id")
 
 	id, err := primitive.ObjectIDFromHex(matchID)
@@ -98,4 +98,8 @@ func (h *MatchHandler) DeleteMatchHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Match deleted successfully"})
+}
+
+func NewMatchHandler() *MatchHandler {
+	return &MatchHandler{}
 }

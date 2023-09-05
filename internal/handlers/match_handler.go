@@ -80,3 +80,22 @@ func (h *MatchHandler) UpdateMatch(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Match updated successfully"})
 }
+
+// Handles the deletion of a match by its ID.
+func (h *MatchHandler) DeleteMatchHandler(c *gin.Context) {
+	matchID := c.Param("id")
+
+	id, err := primitive.ObjectIDFromHex(matchID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Match ID format"})
+		return
+	}
+
+	err = models.DeleteMatch(c, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Match deleted successfully"})
+}

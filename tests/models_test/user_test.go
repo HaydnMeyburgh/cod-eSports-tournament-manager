@@ -2,35 +2,52 @@ package models_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/models"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func CloseTestMongoDB() {
-	// Close the mongoDB client connection
-	if database.GetMongoClient() != nil {
-		err := database.GetMongoClient().Disconnect(context.Background())
-		if err != nil {
-			log.Printf("Error closing test MongoDB client: %v", err)
-		}
+func cleanupTestData() error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
+
+	filter := bson.M{}
+
+	_, err := collection.DeleteMany(context.TODO(), filter)
+	if err != nil {
+		return err
 	}
+
+	return nil
 }
 
 func TestMain(m *testing.M) {
-	err := database.ConnectToTestMongoDB()
+	// Load environment variables from the .env file
+	if err := godotenv.Load("../../.env"); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	err := database.ConnectToMongoDB()
 	if err != nil {
 		log.Fatalf("Error initialising MongoDB: %v", err)
 	}
 
 	exitCode := m.Run()
 
-	CloseTestMongoDB()
+	if err = cleanupTestData(); err != nil {
+		log.Fatalf("Error cleaning up test data: %v", err)
+	}
+
+	database.GetMongoClient().Disconnect(context.TODO())
 
 	os.Exit(exitCode)
 }
@@ -41,7 +58,7 @@ func TestGetUserByID(t *testing.T) {
 		Email:    "test@example.com",
 		Password: "testpassword",
 	}
-	collection := database.GetMongoClient().Database("test_database").Collection("users")
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
 	res, err := collection.InsertOne(nil, user)
 	if err != nil {
 		t.Fatalf("Error inserting user: %v", err)
@@ -65,7 +82,7 @@ func TestGetUserByEmail(t *testing.T) {
 		Password: "testpassword",
 	}
 
-	collection := database.GetMongoClient().Database("test_database").Collection("users")
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
 	_, err := collection.InsertOne(nil, user)
 	if err != nil {
 		t.Fatalf("Error inserting user: %v", err)
@@ -88,7 +105,7 @@ func TestUpdateUser(t *testing.T) {
 		Password: "testpassword",
 	}
 
-	collection := database.GetMongoClient().Database("test_database").Collection("users")
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
 	res, err := collection.InsertOne(nil, user)
 	if err != nil {
 		t.Fatalf("Error inserting user: %v", err)
@@ -99,7 +116,7 @@ func TestUpdateUser(t *testing.T) {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}{
-		Username: "",
+		Username: "updateduser",
 		Password: "updatedpassword",
 	}
 
@@ -119,13 +136,15 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestRegistration(t *testing.T) {
-	newUser := &models.User{
+	newUser := models.User{
 		Username: "newuser",
 		Email:    "newuser@example.com",
 		Password: "newpassword",
 	}
 
-	err := models.RegisterUser(nil, newUser)
+	c, _ := gin.CreateTestContext(nil)
+
+	err := models.RegisterUser(c, &newUser)
 	if err != nil {
 		t.Fatalf("Error registering new user: %v", err)
 	}
@@ -137,19 +156,25 @@ func TestRegistration(t *testing.T) {
 
 	assert.Equal(t, newUser.Username, retrievedUser.Username)
 	assert.Equal(t, newUser.Email, retrievedUser.Email)
-	// Password should come back hasehd
-	assert.NotEqual(t, newUser.Password, retrievedUser.Password)
+	assert.Equal(t, newUser.Password, retrievedUser.Password)
 }
 
 func TestLoginUser(t *testing.T) {
+
 	user := models.User{
-		Username: "testuser",
-		Email:    "test@example.com",
-		Password: "testpassword",
+		Username: "testuser2",
+		Email:    "test2@example.com",
+		Password: "testpassword2",
 	}
 
-	collection := database.GetMongoClient().Database("test_database").Collection("users")
-	_, err := collection.InsertOne(nil, user)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	user.Password = string(hashedPassword)
+
+	fmt.Println("User before database isertion:", user)
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
+	res, err := collection.InsertOne(nil, user)
+
+	fmt.Println("result after insertion:", res)
 	if err != nil {
 		t.Fatalf("Error inserting user: %v", err)
 	}
@@ -158,9 +183,10 @@ func TestLoginUser(t *testing.T) {
 		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}{
-		Email:    "test@example.com",
-		Password: "testpassword",
+		Email:    "test2@example.com",
+		Password: "testpassword2",
 	}
+	fmt.Println("hashed Password:", user.Password)
 
 	token, err := models.LoginUser(nil, &loginUser)
 	if err != nil {

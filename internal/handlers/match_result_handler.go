@@ -143,3 +143,7 @@ func (h *MatchResultHandler) DeleteMatchResult(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Match Result deleted successfully"})
 }
+
+func NewMatchResultHandler() *MatchResultHandler {
+	return &MatchResultHandler{}
+}

@@ -51,10 +51,12 @@ func main() {
 
 	// Initialise handlers
 	userHandler := handlers.NewUserHandler()
+	teamHandler := handlers.NewTeamHandler()
 
 	// Setup routes
 	routes.SetupUserRoutes(router, userHandler)
-
+	routes.SetupTeamRoutes(router, teamHandler)
+	
 	// Start server, or log error if problem with server starting
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Error starting server: %v", err)

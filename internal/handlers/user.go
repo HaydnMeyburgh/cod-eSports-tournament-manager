@@ -19,7 +19,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 	}
 
 	if err := models.RegisterUser(c, &newUser); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -74,7 +74,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID format"})
 	}
-	
+
 	err := models.UpdateUser(c, userIDStr, &updateUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})

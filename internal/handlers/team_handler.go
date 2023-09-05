@@ -47,4 +47,27 @@ func (h *TeamHandler) GetTeamByID(c *gin.Context) {
 	c.JSON(http.StatusOK, team)
 }
 
+// Handler for updating a team
+func (h *TeamHandler) UpdateTeam(c *gin.Context) {
+	teamID := c.Param("id")
 
+	objectID, err := primitive.ObjectIDFromHex(teamID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID format"})
+		return
+	}
+
+	var updatedTeam models.Team
+
+	if err :=c.ShouldBindJSON(&updatedTeam); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := models.UpdateTeam(c, objectID, &updatedTeam); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Team successfully updated"})
+}

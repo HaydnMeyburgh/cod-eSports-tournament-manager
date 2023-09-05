@@ -44,3 +44,16 @@ func GetTeamByID(c *gin.Context, id primitive.ObjectID) (*Team, error) {
 
 	return &team, nil
 }
+
+// Updates an existing team
+func UpdateTeam(c *gin.Context, id primitive.ObjectID, updatedTeam *Team) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("team")
+
+	update := bson.M{"Set": updatedTeam}
+	_, err := collection.UpdateOne(c, bson.M{"_id": id}, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

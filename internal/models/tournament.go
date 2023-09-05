@@ -47,6 +47,21 @@ func AddMatchesToTournament(c *gin.Context, tournamentID primitive.ObjectID, mat
 	return nil
 }
 
+// Get user id from context
+func GetUserIDFromContext(c *gin.Context) (string, error) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		return "", errors.New("User ID not found in context")
+	}
+
+	userIDStr, ok := userID.(string)
+	if !ok {
+		return "", errors.New("User ID is not a string")
+	}
+
+	return userIDStr, nil
+}
+
 // - Creates a new tournament
 func CreateTournament(c *gin.Context, tournament *Tournament) (*Tournament, error) {
 	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")

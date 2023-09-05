@@ -13,10 +13,11 @@ import (
 type MatchResult struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	MatchID   primitive.ObjectID `bson:"match_id" binding:"required"`
+	OrganizerID primitive.ObjectID   `bson:"organizer_id" binding:"required"`
 	WinnerID  primitive.ObjectID `bson:"winner_id"`
 	LoserID   primitive.ObjectID `bson:"loser_id"`
 	Score1    int                `bson:"score1"`
-	Score2    int                `bson:"score2"`
+	Score2    int                `bson:"score2"` 
 }
 
 // MatchResult-related functions

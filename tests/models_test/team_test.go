@@ -107,3 +107,23 @@ func TestUpdateTeam(t *testing.T) {
 	assert.Equal(t, updatedTeam.Players, retrievedTeam.Players)
 }
 
+func TestDeleteTeam(t *testing.T) {
+	team := models.Team{
+		Name:    "TestTeam",
+		Players: []string{"Player1", "Player2"},
+	}
+
+	createdTeam, err := models.CreateTeam(nil, &team)
+	assert.NoError(t, err)
+	assert.NotNil(t, createdTeam)
+	assert.NotEmpty(t, createdTeam.ID)
+
+	teamID := createdTeam.ID
+
+	err = models.DeleteTeam(nil, teamID)
+	assert.NoError(t, err)
+
+	// Attempt to retrieve team should return an error
+	_, err = models.GetTeamByID(nil, teamID)
+	assert.Error(t, err)
+}

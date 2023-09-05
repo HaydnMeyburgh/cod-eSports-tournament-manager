@@ -48,7 +48,20 @@ func GetTournamentByID(c *gin.Context, id primitive.ObjectID) (*Tournament, erro
 
 	return &tournament, nil
 }
+
 // - UpdateTournament
+func updateTournament(c *gin.Context, id primitive.ObjectID, updatedTournament *Tournament) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
+
+	update := bson.M{"$set": updatedTournament}
+	_, err := collection.UpdateOne(c, bson.M{"_id": id}, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // - DeleteTournament
 
 // - CreateTournamentHandler

@@ -2,10 +2,12 @@ package models_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/models"
 	"github.com/joho/godotenv"
@@ -47,12 +49,15 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateTeam(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
 	team := models.Team{
 		Name:    "TestTeam",
 		Players: []string{"player1", "player2", "player3", "player4", "player5"},
 	}
 
-	createdTeam, err := models.CreateTeam(nil, &team)
+	createdTeam, err := models.CreateTeam(c, &team)
+	fmt.Println("team created:", createdTeam)
 	assert.NoError(t, err)
 	assert.NotNil(t, createdTeam)
 	assert.NotEmpty(t, createdTeam.ID)
@@ -60,19 +65,22 @@ func TestCreateTeam(t *testing.T) {
 }
 
 func TestGetTeamByID(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
 	team := models.Team{
-		Name: "TestTeam",
+		Name:    "TestTeam",
 		Players: []string{"Player1", "Player2", "Player3", "Player4", "Player5"},
 	}
 
-	createdTeam, err := models.CreateTeam(nil, &team)
+	createdTeam, err := models.CreateTeam(c, &team)
+	fmt.Println("team created:", createdTeam)
 	assert.NoError(t, err)
 	assert.NotNil(t, createdTeam)
 	assert.NotEmpty(t, createdTeam.ID)
 
 	teamID := createdTeam.ID
-
-	retrievedTeam, err := models.GetTeamByID(nil, teamID)
+	fmt.Println("TeamID: ", teamID)
+	retrievedTeam, err := models.GetTeamByID(c, teamID)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedTeam)
 	assert.Equal(t, team.Name, retrievedTeam.Name)
@@ -80,12 +88,14 @@ func TestGetTeamByID(t *testing.T) {
 }
 
 func TestUpdateTeam(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
 	team := models.Team{
-		Name: "TestTeam",
+		Name:    "TestTeam",
 		Players: []string{"Player1", "Player2", "Player3", "Player4", "Player5"},
 	}
 
-	createdTeam, err := models.CreateTeam(nil, &team)
+	createdTeam, err := models.CreateTeam(c, &team)
 	assert.NoError(t, err)
 	assert.NotNil(t, createdTeam)
 	assert.NotEmpty(t, createdTeam.ID)
@@ -93,14 +103,14 @@ func TestUpdateTeam(t *testing.T) {
 	teamID := createdTeam.ID
 
 	updatedTeam := models.Team{
-		Name: "UpdatedTeam",
+		Name:    "UpdatedTeam",
 		Players: []string{"UpdatedPlayer1", "Player2", "Player3", "Player4", "Player5"},
 	}
 
-	err = models.UpdateTeam(nil, teamID, &updatedTeam)
+	err = models.UpdateTeam(c, teamID, &updatedTeam)
 	assert.NoError(t, err)
 
-	retrievedTeam, err := models.GetTeamByID(nil, teamID)
+	retrievedTeam, err := models.GetTeamByID(c, teamID)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedTeam)
 	assert.Equal(t, updatedTeam.Name, retrievedTeam.Name)
@@ -108,22 +118,24 @@ func TestUpdateTeam(t *testing.T) {
 }
 
 func TestDeleteTeam(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
 	team := models.Team{
 		Name:    "TestTeam",
 		Players: []string{"Player1", "Player2"},
 	}
 
-	createdTeam, err := models.CreateTeam(nil, &team)
+	createdTeam, err := models.CreateTeam(c, &team)
 	assert.NoError(t, err)
 	assert.NotNil(t, createdTeam)
 	assert.NotEmpty(t, createdTeam.ID)
 
 	teamID := createdTeam.ID
 
-	err = models.DeleteTeam(nil, teamID)
+	err = models.DeleteTeam(c, teamID)
 	assert.NoError(t, err)
 
 	// Attempt to retrieve team should return an error
-	_, err = models.GetTeamByID(nil, teamID)
+	_, err = models.GetTeamByID(c, teamID)
 	assert.Error(t, err)
 }

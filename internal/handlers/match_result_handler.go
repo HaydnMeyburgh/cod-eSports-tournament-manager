@@ -40,3 +40,22 @@ func (h *MatchResultHandler) CreateMatchResult(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, createdMatchResult)
 }
+
+// GetMatchResultHandler handles the retrieval of a match result by its ID.
+func (h *MatchResultHandler) GetMatchResultHandler(c *gin.Context) {
+	matchResultID := c.Param("id")
+
+	id, err := primitive.ObjectIDFromHex(matchResultID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Match Result ID format"})
+		return
+	}
+
+	matchResult, err := models.GetMatchResultByID(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, matchResult)
+}

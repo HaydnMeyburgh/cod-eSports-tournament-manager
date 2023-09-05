@@ -78,3 +78,32 @@ func TestGetTeamByID(t *testing.T) {
 	assert.Equal(t, team.Name, retrievedTeam.Name)
 	assert.Equal(t, team.Players, retrievedTeam.Players)
 }
+
+func TestUpdateTeam(t *testing.T) {
+	team := models.Team{
+		Name: "TestTeam",
+		Players: []string{"Player1", "Player2", "Player3", "Player4", "Player5"},
+	}
+
+	createdTeam, err := models.CreateTeam(nil, &team)
+	assert.NoError(t, err)
+	assert.NotNil(t, createdTeam)
+	assert.NotEmpty(t, createdTeam.ID)
+
+	teamID := createdTeam.ID
+
+	updatedTeam := models.Team{
+		Name: "UpdatedTeam",
+		Players: []string{"UpdatedPlayer1", "Player2", "Player3", "Player4", "Player5"},
+	}
+
+	err = models.UpdateTeam(nil, teamID, &updatedTeam)
+	assert.NoError(t, err)
+
+	retrievedTeam, err := models.GetTeamByID(nil, teamID)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedTeam)
+	assert.Equal(t, updatedTeam.Name, retrievedTeam.Name)
+	assert.Equal(t, updatedTeam.Players, retrievedTeam.Players)
+}
+

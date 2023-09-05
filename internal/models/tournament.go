@@ -50,7 +50,7 @@ func GetTournamentByID(c *gin.Context, id primitive.ObjectID) (*Tournament, erro
 }
 
 // - UpdateTournament
-func updateTournament(c *gin.Context, id primitive.ObjectID, updatedTournament *Tournament) error {
+func UpdateTournament(c *gin.Context, id primitive.ObjectID, updatedTournament *Tournament) error {
 	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
 
 	update := bson.M{"$set": updatedTournament}
@@ -63,7 +63,16 @@ func updateTournament(c *gin.Context, id primitive.ObjectID, updatedTournament *
 }
 
 // - DeleteTournament
+func DeleteTournament(c *gin.Context, id primitive.ObjectID) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
 
+	_, err := collection.DeleteOne(c, bson.M{"_id": id})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 // - CreateTournamentHandler
 // - GetTournamentHandler
 // - UpdateTournamentHandler

@@ -145,3 +145,7 @@ func (h *TournamentHandler) DeleteTournament(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Tournament deleted successfully"})
 }
+
+func NewTournamentHandler() *TournamentHandler {
+	return &TournamentHandler{}
+}

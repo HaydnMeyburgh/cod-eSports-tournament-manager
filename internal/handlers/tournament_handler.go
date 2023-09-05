@@ -40,3 +40,22 @@ func (h *TournamentHandler) CreateTournament(c * gin.Context) {
 	c.JSON(http.StatusCreated, createdTournament)
 
 }
+
+// handles the retrieval of a tournament by id
+func (h *TournamentHandler) GetTournamentHandler(c *gin.Context) {
+	tournamentID := c.Param("id")
+
+	id, err := primitive.ObjectIDFromHex(tournamentID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Tournament ID format"})
+		return
+	}
+
+	tournament, err := models.GetTournamentByID(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tournament)
+}

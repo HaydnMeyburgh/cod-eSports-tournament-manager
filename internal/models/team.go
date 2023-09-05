@@ -14,6 +14,21 @@ type Team struct {
 	ID      primitive.ObjectID `bson:"_id,omitempty"`
 	Name    string             `bson:"name" binding:"required"`
 	Players []string           `bson:"players"`
+	TournamentID primitive.ObjectID `bson:"tournament_id,omitempty"`
+}
+
+// add a team to a tournament
+func AddTeamToTournament(c *gin.Context, teamID, tournamentID primitive.ObjectID) error {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournament")
+
+	update := bson.M{"$push": bson.M{"teams": teamID}}
+
+	_, err := collection.UpdateOne(c, bson.M{"_id": tournamentID}, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Creates a new Team

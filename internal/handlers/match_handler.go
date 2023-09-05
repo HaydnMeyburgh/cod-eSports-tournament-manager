@@ -12,13 +12,25 @@ type MatchHandler struct {}
 
 // Handlers creation of a new match
 func (h *MatchHandler) CreateMatch(c *gin.Context) {
-	var newMatch models.Match
+	userIDStr, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
 
+	var newMatch models.Match
 	if err := c.ShouldBindJSON(&newMatch); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	newMatch.OrganizerID = userID
 	createdMatch, err := models.CreateMatch(c, &newMatch)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -72,6 +84,22 @@ func (h *MatchHandler) UpdateMatch(c *gin.Context) {
 		return
 	}
 
+	userIDStr, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	if userID != updatedMatch.OrganizerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organiser of this match"})
+	}
+
 	err = models.UpdateMatch(c, id, &updatedMatch)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -88,6 +116,28 @@ func (h *MatchHandler) DeleteMatch(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(matchID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Match ID format"})
+		return
+	}
+
+	userIDStr, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	match, err := models.GetMatchByID(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	if userID != match.OrganizerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this tournament"})
 		return
 	}
 

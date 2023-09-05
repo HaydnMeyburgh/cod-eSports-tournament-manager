@@ -54,12 +54,14 @@ func main() {
 	teamHandler := handlers.NewTeamHandler()
 	tournamentHandler := handlers.NewTournamentHandler()
 	matchHandler := handlers.NewMatchHandler()
+	matchResultHandler := handlers.NewMatchResultHandler()
 
 	// Setup routes
 	routes.SetupUserRoutes(router, userHandler)
 	routes.SetupTeamRoutes(router, teamHandler)
 	routes.SetupTournamentRoutes(router, tournamentHandler)
 	routes.SetupMatchRoutes(router, matchHandler)
+  routes.SetupMatchResultRoutes(router, matchResultHandler)
 	
 	// Start server, or log error if problem with server starting
 	if err := router.Run(":" + port); err != nil {

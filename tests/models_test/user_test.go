@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"fmt"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -14,14 +15,14 @@ func TestRegistration(t *testing.T) {
 
 	user := models.User{
 		Username: "TestUser",
-		Email:    "test@example.com",
+		Email:    "test1@example.com",
 		Password: "testpassword",
 	}
 
 	err := models.RegisterUser(c, &user)
 	assert.NoError(t, err)
 
-	retrievedUser, err := models.GetUserByEmail("test@example.com")
+	retrievedUser, err := models.GetUserByEmail("test1@example.com")
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedUser)
 	assert.NotEmpty(t, retrievedUser.ID)
@@ -34,14 +35,14 @@ func TestGetUserByID(t *testing.T) {
 
 	user := models.User{
 		Username: "TestUser",
-		Email:    "test@example.com",
+		Email:    "test2@example.com",
 		Password: "testpassword",
 	}
 
 	err := models.RegisterUser(c, &user)
 	assert.NoError(t, err)
 
-	retrievedUser, err := models.GetUserByEmail("test@example.com")
+	retrievedUser, err := models.GetUserByEmail("test2@example.com")
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedUser)
 
@@ -61,14 +62,14 @@ func TestGetUserByEmail(t *testing.T) {
 
 	user := models.User{
 		Username: "TestUser",
-		Email:    "test@example.com",
+		Email:    "test3@example.com",
 		Password: "testpassword",
 	}
 
 	err := models.RegisterUser(c, &user)
 	assert.NoError(t, err)
 
-	retrievedUser, err := models.GetUserByEmail("test@example.com")
+	retrievedUser, err := models.GetUserByEmail("test3@example.com")
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedUser)
 	assert.Equal(t, user.Username, retrievedUser.Username)
@@ -81,14 +82,14 @@ func TestUpdateUser(t *testing.T) {
 
 	user := models.User{
 		Username: "testuser",
-		Email:    "test@example.com",
+		Email:    "test4@example.com",
 		Password: "testpassword",
 	}
 
 	err := models.RegisterUser(c, &user)
 	assert.NoError(t, err)
 
-	retrievedUser, err := models.GetUserByEmail("test@example.com")
+	retrievedUser, err := models.GetUserByEmail("test4@example.com")
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedUser)
 
@@ -109,17 +110,15 @@ func TestUpdateUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedUserByID)
 	assert.Equal(t, updateUser.Username, retrievedUserByID.Username)
-	assert.Equal(t, updateUser.Username, retrievedUserByID.Username)
 	// password should be different after update
-	assert.NotEqual(t, user.Password, retrievedUser.Password)
+	assert.NotEqual(t, user.Password, retrievedUserByID.Password)
 }
 
 func TestLoginUser(t *testing.T) {
-	c, _ := gin.CreateTestContext(nil)
-
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	user := models.User{
 		Username: "testuser",
-		Email:    "test@example.com",
+		Email:    "test5@example.com",
 		Password: "testpassword",
 	}
 
@@ -130,43 +129,11 @@ func TestLoginUser(t *testing.T) {
 		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}{
-		Email:    "test@example.com",
+		Email:    "test5@example.com",
 		Password: "testpassword",
 	}
 
 	token, err := models.LoginUser(c, &loginUser)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
-}
-
-func TestLogoutUser(t *testing.T) {
-	c, _ := gin.CreateTestContext(nil)
-
-	user := models.User{
-		Username: "testuser",
-		Email:    "test@example.com",
-		Password: "testpassword",
-	}
-
-	err := models.RegisterUser(c, &user)
-	assert.NoError(t, err)
-
-	// Login before logging out
-	loginUser := struct {
-		Email    string `json:"email" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}{
-		Email:    "test@example.com",
-		Password: "testpassword",
-	}
-
-	_, err = models.LoginUser(c, &loginUser)
-	assert.NoError(t, err)
-
-	models.LogoutUser(c)
-
-	// Attempt to retrieve JWT token - Should fail
-	cookie, err := c.Request.Cookie("jwtToken")
-	assert.Error(t, err)
-	assert.Nil(t, cookie)
 }

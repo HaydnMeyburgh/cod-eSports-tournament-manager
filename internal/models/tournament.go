@@ -1,1 +1,57 @@
 package models
+
+import (
+	"errors"
+
+	"github.com/gin-gonic/gin"
+	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+type Tournament struct {
+	ID          primitive.ObjectID   `bson:"_id,omitempty"`
+	Name        string               `bson:"name" binding:"required"`
+	Description string               `bson:"description"`
+	StartDate   string               `bson:"start_date" binding:"required"`
+	EndDate     string               `bson:"end_date" binding:"required"`
+	Teams       []primitive.ObjectID `bson:"teams"`
+	Matches     []primitive.ObjectID `bson:"matches"`
+}
+
+// - Creates a new tournament
+func CreateTournament(c *gin.Context, tournament *Tournament) (*Tournament, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
+
+	result, err := collection.InsertOne(c, tournament)
+	if err != nil {
+		return nil, err
+	}
+
+	tournament.ID = result.InsertedID.(primitive.ObjectID)
+	return tournament, nil
+}
+
+// - GetTournamentByID
+func GetTournamentByID(c *gin.Context, id primitive.ObjectID) (*Tournament, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
+
+	var tournament Tournament
+	err := collection.FindOne(c, bson.M{"_id": id}).Decode(&tournament)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("Tournament not found")
+		}
+		return nil, err
+	}
+
+	return &tournament, nil
+}
+// - UpdateTournament
+// - DeleteTournament
+
+// - CreateTournamentHandler
+// - GetTournamentHandler
+// - UpdateTournamentHandler
+// - DeleteTournamentHandler

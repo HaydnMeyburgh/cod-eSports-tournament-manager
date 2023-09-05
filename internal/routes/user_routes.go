@@ -20,10 +20,10 @@ func SetupUserRoutes(r *gin.Engine, userHandler *handlers.UserHandler) {
 	{
 		userRoutes.POST("/register", userHandler.RegisterUser)
 		userRoutes.POST("/login", userHandler.LoginUser)
-		
-		userRoutes.Use(auth.AuthMiddleware(jwtSecret))
-		
 		userRoutes.POST("/logout", userHandler.LogoutUser)
+
+		userRoutes.Use(auth.AuthMiddleware(jwtSecret))
+
 		userRoutes.PUT("/update", userHandler.UpdateUser)
 	}
 }

@@ -16,8 +16,22 @@ type Tournament struct {
 	Description string               `bson:"description"`
 	StartDate   string               `bson:"start_date" binding:"required"`
 	EndDate     string               `bson:"end_date" binding:"required"`
+	OrganizerID primitive.ObjectID   `bson:"organizer_id" binding:"required"`
 	Teams       []primitive.ObjectID `bson:"teams"`
 	Matches     []primitive.ObjectID `bson:"matches"`
+}
+// Adds teams to tournaments
+func AddTeamsToTournament(c *gin.Context, tournamentID primitive.ObjectID, teamIDs []primitive.ObjectID) error {
+	// Add teams to the tournament
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
+
+	update := bson.M{"$push": bson.M{"teams": bson.M{"$each": teamIDs}}}
+	_, err := collection.UpdateOne(c, bson.M{"_id": tournamentID}, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // - Creates a new tournament
@@ -73,6 +87,7 @@ func DeleteTournament(c *gin.Context, id primitive.ObjectID) error {
 
 	return nil
 }
+
 // - CreateTournamentHandler
 // - GetTournamentHandler
 // - UpdateTournamentHandler

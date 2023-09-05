@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-drivers/bson/primitive"
 )
 
 type Team struct {
@@ -31,7 +31,7 @@ func CreateTeam(c *gin.Context, team *Team) (*Team, error) {
 
 // Retrieves a team by id
 func GetTeamByID(c *gin.Context, id primitive.ObjectID) (*Team, error) {
-	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("team")
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("teams")
 
 	var team Team
 	err := collection.FindOne(c, bson.M{"_id": id}).Decode(&team)
@@ -47,9 +47,9 @@ func GetTeamByID(c *gin.Context, id primitive.ObjectID) (*Team, error) {
 
 // Updates an existing team
 func UpdateTeam(c *gin.Context, id primitive.ObjectID, updatedTeam *Team) error {
-	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("team")
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("teams")
 
-	update := bson.M{"Set": updatedTeam}
+	update := bson.M{"$set": updatedTeam}
 	_, err := collection.UpdateOne(c, bson.M{"_id": id}, update)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func UpdateTeam(c *gin.Context, id primitive.ObjectID, updatedTeam *Team) error 
 
 // Delets a team by it's ID
 func DeleteTeam(c *gin.Context, id primitive.ObjectID) error {
-	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("team")
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("teams")
 
 	_, err := collection.DeleteOne(c, bson.M{"_id": id})
 	if err != nil {

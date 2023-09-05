@@ -90,3 +90,6 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Team deleted successfully"})
 }
 
+func NewTeamHandler() *TeamHandler {
+	return &TeamHandler{}
+}

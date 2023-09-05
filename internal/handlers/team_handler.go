@@ -19,8 +19,15 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 		return
 	}
 
+	tournamentID := newTeam.TournamentID
+
 	createdTeam, err := models.CreateTeam(c, &newTeam)
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := models.AddTeamToTournament(c, tournamentID, createdTeam.ID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

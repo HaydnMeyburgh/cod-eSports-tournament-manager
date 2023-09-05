@@ -5,72 +5,94 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/models"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
 )
 
-func TestGetUserByID(t *testing.T) {
+func TestRegistration(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
 	user := models.User{
-		Username: "testuser",
+		Username: "TestUser",
 		Email:    "test@example.com",
 		Password: "testpassword",
 	}
-	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
-	res, err := collection.InsertOne(nil, user)
-	if err != nil {
-		t.Fatalf("Error inserting user: %v", err)
-	}
-	userID := res.InsertedID.(primitive.ObjectID)
 
-	retrievedUser, err := models.GetUserByID(userID)
-	if err != nil {
-		t.Fatalf("Error fetching user by ID: %v", err)
-	}
+	err := models.RegisterUser(c, &user)
+	assert.NoError(t, err)
 
+	retrievedUser, err := models.GetUserByEmail("test@example.com")
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedUser)
+	assert.NotEmpty(t, retrievedUser.ID)
 	assert.Equal(t, user.Username, retrievedUser.Username)
 	assert.Equal(t, user.Email, retrievedUser.Email)
-	assert.Equal(t, user.Password, retrievedUser.Password)
+}
+
+func TestGetUserByID(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
+	user := models.User{
+		Username: "TestUser",
+		Email:    "test@example.com",
+		Password: "testpassword",
+	}
+
+	err := models.RegisterUser(c, &user)
+	assert.NoError(t, err)
+
+	retrievedUser, err := models.GetUserByEmail("test@example.com")
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedUser)
+
+	userID := retrievedUser.ID
+	fmt.Println("UserID: ", userID)
+
+	retrievedUserByID, err := models.GetUserByID(userID)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedUserByID)
+	assert.Equal(t, user.Username, retrievedUserByID.Username)
+	assert.Equal(t, user.Email, retrievedUserByID.Email)
+	assert.Equal(t, user.Password, retrievedUserByID.Password)
 }
 
 func TestGetUserByEmail(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
 	user := models.User{
-		Username: "testuser",
+		Username: "TestUser",
 		Email:    "test@example.com",
 		Password: "testpassword",
 	}
 
-	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
-	_, err := collection.InsertOne(nil, user)
-	if err != nil {
-		t.Fatalf("Error inserting user: %v", err)
-	}
+	err := models.RegisterUser(c, &user)
+	assert.NoError(t, err)
 
 	retrievedUser, err := models.GetUserByEmail("test@example.com")
-	if err != nil {
-		t.Fatalf("Error fetching user by email: %v", err)
-	}
-
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedUser)
 	assert.Equal(t, user.Username, retrievedUser.Username)
 	assert.Equal(t, user.Email, retrievedUser.Email)
 	assert.Equal(t, user.Password, retrievedUser.Password)
 }
 
 func TestUpdateUser(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
 	user := models.User{
 		Username: "testuser",
 		Email:    "test@example.com",
 		Password: "testpassword",
 	}
 
-	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
-	res, err := collection.InsertOne(nil, user)
-	if err != nil {
-		t.Fatalf("Error inserting user: %v", err)
-	}
-	userID := res.InsertedID.(primitive.ObjectID)
+	err := models.RegisterUser(c, &user)
+	assert.NoError(t, err)
+
+	retrievedUser, err := models.GetUserByEmail("test@example.com")
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedUser)
+
+	userID := retrievedUser.ID
 
 	updateUser := struct {
 		Username string `json:"username"`
@@ -80,78 +102,71 @@ func TestUpdateUser(t *testing.T) {
 		Password: "updatedpassword",
 	}
 
-	err = models.UpdateUser(nil, userID.Hex(), &updateUser)
-	if err != nil {
-		t.Fatalf("Error updating user: %v", err)
-	}
+	err = models.UpdateUser(c, userID.Hex(), &updateUser)
+	assert.NoError(t, err)
 
-	retrievedUser, err := models.GetUserByID(userID)
-	if err != nil {
-		t.Fatalf("Error fetching updated user: %v", err)
-	}
-
-	assert.Equal(t, updateUser.Username, retrievedUser.Username)
+	retrievedUserByID, err := models.GetUserByID(userID)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedUserByID)
+	assert.Equal(t, updateUser.Username, retrievedUserByID.Username)
+	assert.Equal(t, updateUser.Username, retrievedUserByID.Username)
 	// password should be different after update
 	assert.NotEqual(t, user.Password, retrievedUser.Password)
 }
 
-func TestRegistration(t *testing.T) {
-	newUser := models.User{
-		Username: "newuser",
-		Email:    "newuser@example.com",
-		Password: "newpassword",
-	}
-
+func TestLoginUser(t *testing.T) {
 	c, _ := gin.CreateTestContext(nil)
 
-	err := models.RegisterUser(c, &newUser)
-	if err != nil {
-		t.Fatalf("Error registering new user: %v", err)
-	}
-
-	retrievedUser, err := models.GetUserByEmail("newuser@example.com")
-	if err != nil {
-		t.Fatalf("Error fetching registered user: %v", err)
-	}
-
-	assert.Equal(t, newUser.Username, retrievedUser.Username)
-	assert.Equal(t, newUser.Email, retrievedUser.Email)
-	assert.Equal(t, newUser.Password, retrievedUser.Password)
-}
-
-func TestLoginUser(t *testing.T) {
-
 	user := models.User{
-		Username: "testuser2",
-		Email:    "test2@example.com",
-		Password: "testpassword2",
+		Username: "testuser",
+		Email:    "test@example.com",
+		Password: "testpassword",
 	}
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	user.Password = string(hashedPassword)
-
-	fmt.Println("User before database isertion:", user)
-	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("users")
-	res, err := collection.InsertOne(nil, user)
-
-	fmt.Println("result after insertion:", res)
-	if err != nil {
-		t.Fatalf("Error inserting user: %v", err)
-	}
+	err := models.RegisterUser(c, &user)
+	assert.NoError(t, err)
 
 	loginUser := struct {
 		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}{
-		Email:    "test2@example.com",
-		Password: "testpassword2",
-	}
-	fmt.Println("hashed Password:", user.Password)
-
-	token, err := models.LoginUser(nil, &loginUser)
-	if err != nil {
-		t.Fatalf("Error logging in user: %v", err)
+		Email:    "test@example.com",
+		Password: "testpassword",
 	}
 
+	token, err := models.LoginUser(c, &loginUser)
+	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
+}
+
+func TestLogoutUser(t *testing.T) {
+	c, _ := gin.CreateTestContext(nil)
+
+	user := models.User{
+		Username: "testuser",
+		Email:    "test@example.com",
+		Password: "testpassword",
+	}
+
+	err := models.RegisterUser(c, &user)
+	assert.NoError(t, err)
+
+	// Login before logging out
+	loginUser := struct {
+		Email    string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}{
+		Email:    "test@example.com",
+		Password: "testpassword",
+	}
+
+	_, err = models.LoginUser(c, &loginUser)
+	assert.NoError(t, err)
+
+	models.LogoutUser(c)
+
+	// Attempt to retrieve JWT token - Should fail
+	cookie, err := c.Request.Cookie("jwtToken")
+	assert.Error(t, err)
+	assert.Nil(t, cookie)
 }

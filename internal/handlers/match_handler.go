@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type MatchHandler struct {}
@@ -33,4 +34,23 @@ func (h *MatchHandler) CreateMatchHandler(c *gin.Context) {
 		}
 
 	c.JSON(http.StatusCreated, createdMatch)
+}
+
+// handles the retrieval of a match
+func (h *MatchHandler) GetMatchHandler(c *gin.Context) {
+	matchID := c.Param("id")
+
+	id, err := primitive.ObjectIDFromHex(matchID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Match ID format"})
+		return
+	}
+
+	match, err := models.GetMatchByID(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, match)
 }

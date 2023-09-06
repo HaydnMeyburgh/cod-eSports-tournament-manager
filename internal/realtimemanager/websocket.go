@@ -12,6 +12,16 @@ type WebSocketHub struct {
 	mu sync.Mutex
 }
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+// GetUpgrader returns the WebSocket upgrader.
+func GetUpgrader() *websocket.Upgrader {
+	return &upgrader
+}
+
 func NewWebSocketHub() *WebSocketHub {
 	return &WebSocketHub{
 		clients: make(map[*websocket.Conn]struct{}),

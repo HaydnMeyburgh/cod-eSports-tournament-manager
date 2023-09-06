@@ -31,7 +31,7 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 		return
 	}
 
-	newTeam.OrganizerID = userID
+	newTeam.OrganiserID = userID
 	tournamentID := newTeam.TournamentID
 
 	createdTeam, err := models.CreateTeam(c, &newTeam)
@@ -46,6 +46,29 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, createdTeam)
+}
+
+// Handler to get teams by organiser ID
+func(h* TeamHandler) GetTeamsByOrganiserID( c *gin.Context) {
+	userID, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	organiserID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	teams, err := models.GetTeamsByOrganiserID(c, organiserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, teams)
 }
 
 // Handler to for getting a team by ID
@@ -96,7 +119,7 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 		return
 	}
 
-	if userID != updatedTeam.OrganizerID {
+	if userID != updatedTeam.OrganiserID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this team"})
 		return
 	}
@@ -136,7 +159,7 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 		return
 	}
 
-	if userID != team.OrganizerID {
+	if userID != team.OrganiserID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this tournament"})
 		return
 	}

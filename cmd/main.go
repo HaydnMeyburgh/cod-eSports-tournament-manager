@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/handlers"
+	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/realtimemanager"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/routes"
 	"github.com/joho/godotenv"
 )
@@ -49,20 +50,37 @@ func main() {
 		})
 	})
 
+	// Initialise the websocket hub
+	var WebSocketHub = realtimemanager.NewWebSocketHub()
+
 	// Initialise handlers
 	userHandler := handlers.NewUserHandler()
 	teamHandler := handlers.NewTeamHandler()
 	tournamentHandler := handlers.NewTournamentHandler()
 	matchHandler := handlers.NewMatchHandler()
 	matchResultHandler := handlers.NewMatchResultHandler()
+	webSocketHandler := handlers.NewWebSocketHandler(WebSocketHub)
+
+	// Setup WebSocket route
+	router.GET("/ws", func(c *gin.Context) {
+		// Upgrade HTTP connection to WebSocket
+		conn, err := realtimemanager.GetUpgrader().Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			log.Printf("Websocket upgrade error: %v", err)
+			return
+		}
+		defer conn.Close()
+
+		webSocketHandler.HandleWebSocketMessages(c, conn) // Pass the connection to the handler
+	})
 
 	// Setup routes
 	routes.SetupUserRoutes(router, userHandler)
 	routes.SetupTeamRoutes(router, teamHandler)
 	routes.SetupTournamentRoutes(router, tournamentHandler)
 	routes.SetupMatchRoutes(router, matchHandler)
-  routes.SetupMatchResultRoutes(router, matchResultHandler)
-	
+	routes.SetupMatchResultRoutes(router, matchResultHandler)
+
 	// Start server, or log error if problem with server starting
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Error starting server: %v", err)

@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/handlers"
@@ -35,6 +35,10 @@ func main() {
 
 	// Gin router creation
 	router := gin.Default()
+
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true 
+	router.Use(cors.New(config))
 
 	// SImple root route
 	router.GET("/", func(ctx *gin.Context) {

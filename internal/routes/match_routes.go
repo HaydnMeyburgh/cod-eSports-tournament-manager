@@ -18,6 +18,7 @@ func SetupMatchRoutes(r *gin.Engine, matchHandler *handlers.MatchHandler) {
 
 	matchRoutes := r.Group("/match")
 	{
+		matchRoutes.GET("/", matchHandler.GetMatchesByOrganiserID)
 		matchRoutes.GET("/:id", matchHandler.GetMatchByID)
 
 		matchRoutes.Use(auth.AuthMiddleware(jwtSecret))

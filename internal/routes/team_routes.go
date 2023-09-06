@@ -18,6 +18,7 @@ func SetupTeamRoutes(r *gin.Engine, teamHandler *handlers.TeamHandler) {
 
 	teamRoutes := r.Group("/teams")
 	{
+		teamRoutes.GET("/", teamHandler.GetTeamsByOrganiserID)
 		teamRoutes.GET("/:id", teamHandler.GetTeamByID)
 
 		teamRoutes.Use(auth.AuthMiddleware(jwtSecret))

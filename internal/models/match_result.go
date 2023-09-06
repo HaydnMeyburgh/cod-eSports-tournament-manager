@@ -13,7 +13,7 @@ import (
 type MatchResult struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	MatchID   primitive.ObjectID `bson:"match_id" binding:"required"`
-	OrganizerID primitive.ObjectID   `bson:"organizer_id" binding:"required"`
+	OrganiserID primitive.ObjectID   `bson:"organiser_id" binding:"required"`
 	WinnerID  primitive.ObjectID `bson:"winner_id"`
 	LoserID   primitive.ObjectID `bson:"loser_id"`
 	Score1    int                `bson:"score1"`
@@ -32,6 +32,32 @@ func CreateMatchResult(c *gin.Context, matchResult *MatchResult) (*MatchResult, 
 
 	matchResult.ID = result.InsertedID.(primitive.ObjectID)
 	return matchResult, nil
+}
+// Gets match results by organiser id
+func GetMatchResultsByOrganiserID(c *gin.Context, organiserID primitive.ObjectID) ([]*MatchResult, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("match_results")
+
+
+	cursor, err := collection.Find(c, bson.M{"organiser_id": organiserID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	var matchResults []*MatchResult
+	for cursor.Next(c) {
+		var matchResult MatchResult
+		if err := cursor.Decode(&matchResult); err != nil {
+			return nil, err
+		}
+		matchResults = append(matchResults, &matchResult)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return matchResults, nil
 }
 
 // - GetMatchResultByID

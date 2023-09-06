@@ -30,7 +30,7 @@ func (h *TournamentHandler) CreateTournament(c * gin.Context) {
 		return
 	}
 
-	newTournament.OrganizerID = userID
+	newTournament.OrganiserID = userID
 	createdTournament, err := models.CreateTournament(c, &newTournament)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -39,6 +39,29 @@ func (h *TournamentHandler) CreateTournament(c * gin.Context) {
 
 	c.JSON(http.StatusCreated, createdTournament)
 
+}
+
+// Handles getting all tournaments by organiser ID
+func (h *TournamentHandler) GetTournamentsByOrganiserID(c *gin.Context) {
+	userID, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	organiserID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invaliad User ID format"})
+		return
+	}
+
+	tournaments, err := models.GetTournamentsByOrganiserID(c, organiserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tournaments)
 }
 
 // handles the retrieval of a tournament by id
@@ -90,7 +113,7 @@ func (h *TournamentHandler) UpdateTournament(c *gin.Context) {
 		return
 	}
 
-	if userID != updatedTournament.OrganizerID {
+	if userID != updatedTournament.OrganiserID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this tournament"})
 		return
 	}
@@ -132,7 +155,7 @@ func (h *TournamentHandler) DeleteTournament(c *gin.Context) {
 		return
 	}
 
-	if userID != tournament.OrganizerID {
+	if userID != tournament.OrganiserID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this tournament"})
 		return
 	}

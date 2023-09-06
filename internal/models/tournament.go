@@ -157,7 +157,3 @@ func DeleteTournament(c *gin.Context, id primitive.ObjectID) error {
 	return nil
 }
 
-// - CreateTournamentHandler
-// - GetTournamentHandler
-// - UpdateTournamentHandler
-// - DeleteTournamentHandler

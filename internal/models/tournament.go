@@ -1,24 +1,28 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
+	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/realtimemanager"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Tournament struct {
-	ID          primitive.ObjectID   `bson:"_id,omitempty"`
-	Name        string               `bson:"name" binding:"required"`
-	Description string               `bson:"description"`
-	StartDate   string               `bson:"start_date" binding:"required"`
-	EndDate     string               `bson:"end_date" binding:"required"`
-	OrganiserID primitive.ObjectID   `bson:"organiser_id" binding:"required"`
-	Teams       []primitive.ObjectID `bson:"teams"`
-	Matches     []primitive.ObjectID `bson:"matches"`
+	ID           primitive.ObjectID   `bson:"_id,omitempty"`
+	Name         string               `bson:"name" binding:"required"`
+	Description  string               `bson:"description"`
+	StartDate    string               `bson:"start_date" binding:"required"`
+	EndDate      string               `bson:"end_date" binding:"required"`
+	OrganiserID  primitive.ObjectID   `bson:"organiser_id" binding:"required"`
+	Teams        []primitive.ObjectID `bson:"teams"`
+	Matches      []primitive.ObjectID `bson:"matches"`
+	WebSocketHub *realtimemanager.WebSocketHub
 }
 
 // Adds teams to tournaments
@@ -87,6 +91,25 @@ func CreateTournament(c *gin.Context, tournament *Tournament) (*Tournament, erro
 		}
 	}
 
+	// Broadcast the message to WebSocket clients
+	message := map[string]interface{}{
+		"action":        "tournament_created",
+		"tournament_id": tournament.ID.Hex(),
+		"name":          tournament.Name,
+		"desccription":  tournament.Description,
+		"start_date":    tournament.StartDate,
+		"end_date":      tournament.EndDate,
+	}
+
+	// Marshal the message to JSON
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshaling WebSocket message: %v", err)
+		return tournament, nil
+	}
+
+	tournament.WebSocketHub.Broadcast(messageJSON)
+
 	return tournament, nil
 }
 
@@ -142,6 +165,24 @@ func UpdateTournament(c *gin.Context, id primitive.ObjectID, updatedTournament *
 		return err
 	}
 
+	// Broadcast the message to WebSocket clients
+	message := map[string]interface{}{
+		"action":        "tournament_created",
+		"tournament_id": updatedTournament.ID.Hex(),
+		"name":          updatedTournament.Name,
+		"desccription":  updatedTournament.Description,
+		"start_date":    updatedTournament.StartDate,
+		"end_date":      updatedTournament.EndDate,
+	}
+
+	// Marshal the message to JSON
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	updatedTournament.WebSocketHub.Broadcast(messageJSON)
+
 	return nil
 }
 
@@ -156,4 +197,3 @@ func DeleteTournament(c *gin.Context, id primitive.ObjectID) error {
 
 	return nil
 }
-

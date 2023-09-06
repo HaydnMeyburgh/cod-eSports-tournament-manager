@@ -63,6 +63,7 @@ func CreateTeam(c *gin.Context, team *Team) (*Team, error) {
 		return team, nil
 	}
 
+	log.Printf("Broadcasting WebSocket message: %s", messageJSON)
 	team.WebSocketHub.Broadcast(messageJSON)
 
 	return team, nil
@@ -135,6 +136,7 @@ func UpdateTeam(c *gin.Context, id primitive.ObjectID, updatedTeam *Team) error 
 		return err
 	}
 
+	log.Printf("Broadcasting WebSocket message: %s", messageJSON)
 	updatedTeam.WebSocketHub.Broadcast(messageJSON)
 
 	return nil

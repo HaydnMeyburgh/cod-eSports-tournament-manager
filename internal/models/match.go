@@ -67,6 +67,7 @@ func CreateMatch(c *gin.Context, match *Match) (*Match, error) {
 		return match, nil
 	}
 
+	log.Printf("Broadcasting WebSocket message: %s", messageJSON)
 	// Broadcast the message to WebSocket clients
 	match.WebSocketHub.Broadcast(messageJSON)
 
@@ -142,6 +143,7 @@ func UpdateMatch(c *gin.Context, id primitive.ObjectID, updatedMatch *Match) err
 		return err
 	}
 
+	log.Printf("Broadcasting WebSocket message: %s", messageJSON)
 	// Broadcast the message to WebSocket clients
 	updatedMatch.WebSocketHub.Broadcast(messageJSON)
 

@@ -108,6 +108,7 @@ func CreateTournament(c *gin.Context, tournament *Tournament) (*Tournament, erro
 		return tournament, nil
 	}
 
+	log.Printf("Broadcasting WebSocket message: %s", messageJSON)
 	tournament.WebSocketHub.Broadcast(messageJSON)
 
 	return tournament, nil
@@ -181,6 +182,7 @@ func UpdateTournament(c *gin.Context, id primitive.ObjectID, updatedTournament *
 		return err
 	}
 
+	log.Printf("Broadcasting WebSocket message: %s", messageJSON)
 	updatedTournament.WebSocketHub.Broadcast(messageJSON)
 
 	return nil

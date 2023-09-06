@@ -54,7 +54,8 @@ func CreateMatchResult(c *gin.Context, matchResult *MatchResult) (*MatchResult, 
 		log.Printf("Error marshaling WebSocket message: %v", err)
 		return matchResult, nil
 	}
-
+	
+	log.Printf("Broadcasting WebSocket message: %s", messageJSON)
 	// Broadcast the message to WebSocket clients
 	matchResult.WebSocketHub.Broadcast(messageJSON)
 
@@ -132,6 +133,7 @@ func UpdateMatchResult(c *gin.Context, id primitive.ObjectID, updatedMatchResult
 		return err
 	}
 
+	log.Printf("Broadcasting WebSocket message: %s", messageJSON)
 	// Broadcast the message to WebSocket clients
 	updatedMatchResult.WebSocketHub.Broadcast(messageJSON)
 

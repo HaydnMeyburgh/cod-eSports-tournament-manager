@@ -16,7 +16,7 @@ type Tournament struct {
 	Description string               `bson:"description"`
 	StartDate   string               `bson:"start_date" binding:"required"`
 	EndDate     string               `bson:"end_date" binding:"required"`
-	OrganizerID primitive.ObjectID   `bson:"organizer_id" binding:"required"`
+	OrganiserID primitive.ObjectID   `bson:"organiser_id" binding:"required"`
 	Teams       []primitive.ObjectID `bson:"teams"`
 	Matches     []primitive.ObjectID `bson:"matches"`
 }
@@ -88,6 +88,32 @@ func CreateTournament(c *gin.Context, tournament *Tournament) (*Tournament, erro
 	}
 
 	return tournament, nil
+}
+
+// GetAllTournaments
+func GetTournamentsByOrganiserID(c *gin.Context, OrganiserID primitive.ObjectID) ([]*Tournament, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("tournaments")
+
+	cursor, err := collection.Find(c, bson.M{"organiser_id": OrganiserID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	var tournaments []*Tournament
+	for cursor.Next(c) {
+		var tournament Tournament
+		if err := cursor.Decode(&tournament); err != nil {
+			return nil, err
+		}
+		tournaments = append(tournaments, &tournament)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return tournaments, nil
 }
 
 // - GetTournamentByID

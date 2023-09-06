@@ -19,8 +19,9 @@ type Match struct {
 	OrganiserID  primitive.ObjectID `bson:"organiser_id" binding:"required"`
 	Team1ID      primitive.ObjectID `bson:"team1_id" binding:"required"`
 	Team2ID      primitive.ObjectID `bson:"team2_id" binding:"required"`
-	Score1       int                `bson:"score1"`
-	Score2       int                `bson:"score2"`
+	Date         string             `bson:"date"`
+	Team1Name    string             `bson:"team1_name"`
+	Team2Name    string             `bson:"team2_name"`
 	WebSocketHub *realtimemanager.WebSocketHub
 }
 
@@ -42,6 +43,20 @@ func AddMatchToTournament(c *gin.Context, matchID, tournamentID primitive.Object
 func CreateMatch(c *gin.Context, match *Match) (*Match, error) {
 	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("matches")
 
+	// retrieve team names based on Team1ID and Team2ID from the database
+	team1, err := GetTeamByID(c, match.Team1ID)
+	if err != nil {
+		return nil, err
+	}
+
+	team2, err := GetTeamByID(c, match.Team2ID)
+	if err != nil {
+		return nil, err
+	}
+
+	match.Team1Name = team1.Name
+	match.Team2Name = team2.Name
+
 	result, err := collection.InsertOne(c, match)
 	if err != nil {
 		return nil, err
@@ -56,8 +71,9 @@ func CreateMatch(c *gin.Context, match *Match) (*Match, error) {
 		"tournament_id": match.TournamentID.Hex(),
 		"team1_id":      match.Team1ID.Hex(),
 		"team2_id":      match.Team2ID.Hex(),
-		"score1":        match.Score1,
-		"score2":        match.Score2,
+		"date":          match.Date,
+		"team1_name":    match.Team1Name,
+		"team2_name":    match.Team2Name,
 	}
 
 	// Marshal the message to JSON
@@ -133,8 +149,9 @@ func UpdateMatch(c *gin.Context, id primitive.ObjectID, updatedMatch *Match) err
 		"tournament_id": updatedMatch.TournamentID.Hex(),
 		"team1_id":      updatedMatch.Team1ID.Hex(),
 		"team2_id":      updatedMatch.Team2ID.Hex(),
-		"score1":        updatedMatch.Score1,
-		"score2":        updatedMatch.Score2,
+		"date":          updatedMatch.Date,
+		"team1_name":    updatedMatch.Team1Name,
+		"team2_name":    updatedMatch.Team2Name,
 	}
 
 	// Marshal the message to JSON

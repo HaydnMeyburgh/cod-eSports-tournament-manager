@@ -13,7 +13,7 @@ import (
 type Team struct {
 	ID      primitive.ObjectID `bson:"_id,omitempty"`
 	Name    string             `bson:"name" binding:"required"`
-	OrganizerID primitive.ObjectID   `bson:"organizer_id" binding:"required"`
+	OrganiserID primitive.ObjectID   `bson:"organiser_id" binding:"required"`
 	Players []string           `bson:"players"`
 	TournamentID primitive.ObjectID `bson:"tournament_id,omitempty"`
 }
@@ -43,6 +43,32 @@ func CreateTeam(c *gin.Context, team *Team) (*Team, error) {
 
 	team.ID = result.InsertedID.(primitive.ObjectID)
 	return team, nil
+}
+
+// Get Matches by organiser id
+func GetTeamsByOrganiserID(c *gin.Context, organiserID primitive.ObjectID) ([]*Team, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("teams")
+
+	cursor, err := collection.Find(c, bson.M{"organiser_id": organiserID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	var teams []*Team
+	for cursor.Next(c) {
+		var team Team
+		if err := cursor.Decode(&team); err != nil {
+			return nil, err
+		}
+		teams = append(teams, &team)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return teams, nil
 }
 
 // Retrieves a team by id

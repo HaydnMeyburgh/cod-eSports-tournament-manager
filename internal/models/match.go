@@ -13,7 +13,7 @@ import (
 type Match struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	TournamentID primitive.ObjectID `bson:"tournament_id,omitempty"`
-	OrganizerID primitive.ObjectID   `bson:"organizer_id" binding:"required"`
+	OrganiserID primitive.ObjectID   `bson:"organiser_id" binding:"required"`
 	Team1ID   primitive.ObjectID `bson:"team1_id" binding:"required"`
 	Team2ID   primitive.ObjectID `bson:"team2_id" binding:"required"`
 	Score1    int                `bson:"score1"`
@@ -45,6 +45,32 @@ func CreateMatch(c *gin.Context, match *Match) (*Match, error) {
 
 	match.ID = result.InsertedID.(primitive.ObjectID)
 	return match, nil
+}
+
+// Get Matches by organiserID
+func GetMatchesByOrganiserID(c *gin.Context, organiserID primitive.ObjectID) ([]*Match, error) {
+	collection := database.GetMongoClient().Database("esports-tournament-manager").Collection("matches")
+
+	cursor, err := collection.Find(c, bson.M{"organiser_id": organiserID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	var matches []*Match
+	for cursor.Next(c){
+		var match Match
+		if err := cursor.Decode(&match); err != nil {
+			return nil, err
+		}
+		matches = append(matches, &match)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return matches, nil
 }
 
 // - GetMatchByID

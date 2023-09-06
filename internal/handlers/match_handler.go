@@ -30,7 +30,7 @@ func (h *MatchHandler) CreateMatch(c *gin.Context) {
 		return
 	}
 
-	newMatch.OrganizerID = userID
+	newMatch.OrganiserID = userID
 	createdMatch, err := models.CreateMatch(c, &newMatch)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -47,6 +47,29 @@ func (h *MatchHandler) CreateMatch(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, createdMatch)
 }
+
+// Handlers getting all matches by organiser id
+func (h *MatchHandler) GetMatchesByOrganiserID(c *gin.Context) {
+	userID, err := models.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	organiserID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID format"})
+		return
+	}
+
+	matches, err := models.GetMatchesByOrganiserID(c, organiserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, matches)
+} 
 
 // handles the retrieval of a match
 func (h *MatchHandler) GetMatchByID(c *gin.Context) {
@@ -96,7 +119,7 @@ func (h *MatchHandler) UpdateMatch(c *gin.Context) {
 		return
 	}
 
-	if userID != updatedMatch.OrganizerID {
+	if userID != updatedMatch.OrganiserID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organiser of this match"})
 	}
 
@@ -136,7 +159,7 @@ func (h *MatchHandler) DeleteMatch(c *gin.Context) {
 		return
 	}
 
-	if userID != match.OrganizerID {
+	if userID != match.OrganiserID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the organizer of this tournament"})
 		return
 	}

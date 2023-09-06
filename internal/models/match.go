@@ -1,23 +1,27 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/database"
+	"github.com/haydnmeyburgh/cod-eSports-tournament-manager/internal/realtimemanager"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Match struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	ID           primitive.ObjectID `bson:"_id,omitempty"`
 	TournamentID primitive.ObjectID `bson:"tournament_id,omitempty"`
-	OrganiserID primitive.ObjectID   `bson:"organiser_id" binding:"required"`
-	Team1ID   primitive.ObjectID `bson:"team1_id" binding:"required"`
-	Team2ID   primitive.ObjectID `bson:"team2_id" binding:"required"`
-	Score1    int                `bson:"score1"`
-	Score2    int                `bson:"score2"`
+	OrganiserID  primitive.ObjectID `bson:"organiser_id" binding:"required"`
+	Team1ID      primitive.ObjectID `bson:"team1_id" binding:"required"`
+	Team2ID      primitive.ObjectID `bson:"team2_id" binding:"required"`
+	Score1       int                `bson:"score1"`
+	Score2       int                `bson:"score2"`
+	WebSocketHub *realtimemanager.WebSocketHub
 }
 
 // add a team to a tournament
@@ -44,6 +48,28 @@ func CreateMatch(c *gin.Context, match *Match) (*Match, error) {
 	}
 
 	match.ID = result.InsertedID.(primitive.ObjectID)
+
+	// Construct the WebSocket message for match creation
+	message := map[string]interface{}{
+		"action":        "match_created",
+		"match_id":      match.ID.Hex(),
+		"tournament_id": match.TournamentID.Hex(),
+		"team1_id":      match.Team1ID.Hex(),
+		"team2_id":      match.Team2ID.Hex(),
+		"score1":        match.Score1,
+		"score2":        match.Score2,
+	}
+
+	// Marshal the message to JSON
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshaling WebSocket message: %v", err)
+		return match, nil
+	}
+
+	// Broadcast the message to WebSocket clients
+	match.WebSocketHub.Broadcast(messageJSON)
+
 	return match, nil
 }
 
@@ -58,7 +84,7 @@ func GetMatchesByOrganiserID(c *gin.Context, organiserID primitive.ObjectID) ([]
 	defer cursor.Close(c)
 
 	var matches []*Match
-	for cursor.Next(c){
+	for cursor.Next(c) {
 		var match Match
 		if err := cursor.Decode(&match); err != nil {
 			return nil, err
@@ -99,6 +125,26 @@ func UpdateMatch(c *gin.Context, id primitive.ObjectID, updatedMatch *Match) err
 		return err
 	}
 
+	// Construct the WebSocket message for match update
+	message := map[string]interface{}{
+		"action":        "match_updated",
+		"match_id":      id.Hex(),
+		"tournament_id": updatedMatch.TournamentID.Hex(),
+		"team1_id":      updatedMatch.Team1ID.Hex(),
+		"team2_id":      updatedMatch.Team2ID.Hex(),
+		"score1":        updatedMatch.Score1,
+		"score2":        updatedMatch.Score2,
+	}
+
+	// Marshal the message to JSON
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast the message to WebSocket clients
+	updatedMatch.WebSocketHub.Broadcast(messageJSON)
+
 	return nil
 }
 
@@ -113,8 +159,3 @@ func DeleteMatch(c *gin.Context, id primitive.ObjectID) error {
 
 	return nil
 }
-
-// - CreateMatchHandler
-// - GetMatchHandler
-// - UpdateMatchHandler
-// - DeleteMatchHandler

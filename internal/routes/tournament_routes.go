@@ -18,6 +18,7 @@ func SetupTournamentRoutes(r *gin.Engine, tournamentHandler *handlers.Tournament
 
 	tournamentRoutes := r.Group("/tournament")
 	{
+		tournamentRoutes.GET("/", tournamentHandler.GetTournamentsByOrganiserID)
 		tournamentRoutes.GET("/:id", tournamentHandler.GetTournamentByID)
 
 		tournamentRoutes.Use(auth.AuthMiddleware(jwtSecret))

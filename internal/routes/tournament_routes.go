@@ -16,7 +16,7 @@ func SetupTournamentRoutes(r *gin.Engine, tournamentHandler *handlers.Tournament
 		log.Fatalf("SECRET_KEY environment variable is not set")
 	}
 
-	tournamentRoutes := r.Group("/tournament")
+	tournamentRoutes := r.Group("/tournaments")
 	{
 		tournamentRoutes.GET("/", tournamentHandler.GetTournamentsByOrganiserID)
 		tournamentRoutes.GET("/:id", tournamentHandler.GetTournamentByID)

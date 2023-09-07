@@ -16,7 +16,7 @@ func SetupMatchRoutes(r *gin.Engine, matchHandler *handlers.MatchHandler) {
 		log.Fatalf("SECRET_KEY environment variable is not set")
 	}
 
-	matchRoutes := r.Group("/match")
+	matchRoutes := r.Group("/matches")
 	{
 		matchRoutes.GET("/", matchHandler.GetMatchesByOrganiserID)
 		matchRoutes.GET("/:id", matchHandler.GetMatchByID)
